@@ -1,0 +1,129 @@
+
+/*
+ * hash.h -- A generic hash table implementation, allowing arbitrary
+ * key structures.
+ *
+ */
+#include <stdint.h>
+#include <stdbool.h>
+#include <pthread.h>
+#include <hash.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+typedef void lhashtable_t;	/* representation of a hashtable hidden */
+
+typedef struct lhashObj {
+	pthread_mutex_t lock;
+	hashtable_t* h;
+} lhashObj;
+
+/* lhopen -- opens a hash table with initial size hsize */
+lhashtable_t *lhopen(uint32_t hsize) {
+	struct lhashObj* lhash = (struct lhashObj*)malloc(sizeof(struct lhashObj));
+	lhash->h = hopen(hsize);
+	pthread_mutex_init(&(lhash->lock), NULL);
+	return (lhashtable_t*) lhash;
+}
+
+/* lhclose -- closes a hash table */
+void lhclose(lhashtable_t *htp) {
+	struct lhashObj* lhash = (struct lhashObj*)(htp);
+	pthread_mutex_lock(&(lhash->lock));
+	
+	struct hashtable_t* h = lhash->h;
+	hclose(h);
+	pthread_mutex_destroy(&(lhash->lock));
+	free(lhash);
+}
+
+/* lhput -- puts an entry into a hash table under designated key 
+ * returns 0 for success; non-zero otherwise
+ */
+int32_t lhput(lhashtable_t *htp, void *ep, const char *key, int keylen) {
+	struct lhashObj* lhash = (struct lhashObj*)(htp);
+  pthread_mutex_lock(&(lhash->lock));
+
+	struct hashtable_t* h = lhash->h;
+	hput(h, ep, key, keylen);
+	
+	pthread_mutex_unlock(&(lhash->lock));
+	return 0;
+}
+
+/* lhapply -- applies a function to every entry in hash table */
+void lhapply(lhashtable_t *htp, void (*fn)(void* ep)) {
+	struct lhashObj* lhash = (struct lhashObj*)(htp);
+  pthread_mutex_lock(&(lhash->lock));
+
+	struct hashtable_t* h = lhash->h;
+
+	happly(h, fn);
+	
+	pthread_mutex_unlock(&(lhash->lock));
+}
+
+/* lhsearch -- searchs for an entry under a designated key using a
+ * designated search fn -- returns a pointer to the entry or NULL if
+ * not found
+ */
+void *lhsearch(lhashtable_t *htp, 
+							 bool (*searchfn)(void* elementp, const void* searchkeyp), 
+							 const char *key, int32_t keylen) {
+
+	
+	struct lhashObj* lhash = (struct lhashObj*)(htp);
+  pthread_mutex_lock(&(lhash->lock));
+
+	struct hashtable_t* h = lhash->h;
+
+	void* res = hsearch(h, searchfn, key, keylen);
+	pthread_mutex_unlock(&(lhash->lock));
+	//if(res == NULL){
+	//printf("null in lhsearch\n");
+	//}
+	return res;
+}
+
+/* lhremove -- removes and returns an entry under a designated key
+ * using a designated search fn -- returns a pointer to the entry or
+ * NULL if not found
+ */
+void *lhremove(lhashtable_t *htp, 
+							 bool (*searchfn)(void* elementp, const void* searchkeyp), 
+							 const char *key, int32_t keylen) {
+	
+	struct lhashObj* lhash = (struct lhashObj*)(htp);
+  pthread_mutex_lock(&(lhash->lock));
+	
+	struct hashtable_t* h = lhash->h;
+
+	void* res = hremove(h, searchfn, key, keylen);
+	pthread_mutex_unlock(&(lhash->lock));
+	return res;
+}
+
+bool searchandput(lhashtable_t *htp,                                         
+        bool (*searchfn)(void* elementp, const void* searchkeyp),               
+        char *key, int32_t keylen){
+
+	struct lhashObj* lhash = (struct lhashObj*)(htp);                                  
+  pthread_mutex_lock(&(lhash->lock));                                                
+                                                                                     
+  struct hashtable_t* h = lhash->h;                                                  
+                                                                                     
+  void* res = hsearch(h, searchfn, (const char*) key, keylen);                           
+	if(res == NULL){
+		
+		hput(h, key, (const char*)key, keylen);
+		pthread_mutex_unlock(&(lhash->lock));                                            
+		return true;
+	}
+
+
+	pthread_mutex_unlock(&(lhash->lock));                                              
+  //if(res == NULL){                                                                 
+  //printf("null in lhsearch\n");                                                    
+  //}                                                                                
+	return false;
+}
