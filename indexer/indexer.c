@@ -16,7 +16,7 @@ int totCount = 0;
 /* indexer.c --- 
  * 
  * 
- * Author: John R. Weingart
+ * Author: John R. Weingart, Grant Dumanian, Catherine Parnell
  * Created: Thu Oct 24 17:06:41 2019 (-0400)
  * Version: 
  * 
