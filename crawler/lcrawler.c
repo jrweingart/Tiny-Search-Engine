@@ -1,7 +1,7 @@
 /* crawler.c --- 
  * 
  * 
- * Author: Catherine D. Parnell
+ * Author: John Weingart, Grant Dumanian, Catherine D. Parnell
  * Created: Wed Oct 16 15:38:55 2019 (-0400)
  * Version: 
  * 
