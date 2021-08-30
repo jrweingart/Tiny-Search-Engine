@@ -1,7 +1,7 @@
 /* query.c --- 
  * 
  * 
- * Author: John R. Weingart
+ * Author: John R. Weingart, Grant Dumanian, Catherine Parnell
  * Created: Thu Oct 31 17:56:05 2019 (-0400)
  * Version: 
  * 
